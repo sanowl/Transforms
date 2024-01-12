@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 # Define a custom layer for the Spatial Transformer Network
 class SpatialTransformerNetwork(tf.keras.layers.Layer):
@@ -61,13 +62,29 @@ model.compile(optimizer='adam',
 (X_train, y_train), (X_test, y_test) = tf.keras.datasets.cifar10.load_data()
 X_train, X_test = X_train / 255.0, X_test / 255.0  # Normalize pixel values to [0, 1]
 
-# Train the model
-model.fit(X_train, y_train, epochs=10, batch_size=64, validation_split=0.2)
+# Define a learning rate schedule for training
+def lr_schedule(epoch):
+    if epoch < 50:
+        return 0.001
+    elif epoch < 100:
+        return 0.0001
+    else:
+        return 0.00001
+
+lr_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_schedule)
+
+# Define early stopping to prevent overfitting
+early_stopping = tf.keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
+
+# Train the model with callbacks
+model.fit(X_train, y_train, epochs=150, batch_size=64, validation_split=0.2,
+          callbacks=[lr_scheduler, early_stopping])
 
 # Evaluate the model
 test_loss, test_accuracy = model.evaluate(X_test, y_test)
 print(f"Test Loss: {test_loss}, Test Accuracy: {test_accuracy}")
 
-# Use the trained model for your specific task, e.g., image classification
-# predictions = model.predict(X_new_data)
-# ...
+# Use the trained model for image classification
+# Replace X_new_data with your new data for predictions
+predictions = model.predict(X_new_data)
+# Now, 'predictions' contains the predicted class probabilities for your new data
